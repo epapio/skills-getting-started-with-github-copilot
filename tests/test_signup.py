@@ -1,10 +1,16 @@
+from urllib.parse import quote
+
 from src.app import activities
+
+
+def signup_url(activity_name):
+    return f"/activities/{quote(activity_name, safe='')}/signup"
 
 
 def test_signup_success_adds_participant(client):
     email = "new.student@mergington.edu"
 
-    response = client.post("/activities/Chess Club/signup", params={"email": email})
+    response = client.post(signup_url("Chess Club"), params={"email": email})
 
     assert response.status_code == 200
     assert response.json()["message"] == f"Signed up {email} for Chess Club"
@@ -15,7 +21,7 @@ def test_signup_duplicate_email_returns_400(client):
     existing_email = activities["Chess Club"]["participants"][0]
 
     response = client.post(
-        "/activities/Chess Club/signup",
+        signup_url("Chess Club"),
         params={"email": existing_email},
     )
 
@@ -25,7 +31,7 @@ def test_signup_duplicate_email_returns_400(client):
 
 def test_signup_unknown_activity_returns_404(client):
     response = client.post(
-        "/activities/Unknown Activity/signup",
+        signup_url("Unknown Activity"),
         params={"email": "someone@mergington.edu"},
     )
 
@@ -36,8 +42,8 @@ def test_signup_unknown_activity_returns_404(client):
 def test_signup_same_email_is_idempotent_from_client_perspective(client):
     email = "repeat.student@mergington.edu"
 
-    first = client.post("/activities/Art Studio/signup", params={"email": email})
-    second = client.post("/activities/Art Studio/signup", params={"email": email})
+    first = client.post(signup_url("Art Studio"), params={"email": email})
+    second = client.post(signup_url("Art Studio"), params={"email": email})
 
     assert first.status_code == 200
     assert second.status_code == 400
